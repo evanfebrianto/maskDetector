@@ -12,6 +12,9 @@ import time
 import os
 import copy
 
+######################################################################
+# Data Preprocessing
+# ------------------
 # Data augmentation and normalization for training
 # Just normalization for validation
 data_transforms = {
@@ -41,7 +44,7 @@ class_names = image_datasets['train'].classes
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 ######################################################################
-# Training the model
+# Training procedure
 # ------------------
 def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
     since = time.time()
@@ -117,8 +120,6 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs=25):
 # ----------------------
 #
 # Load a pretrained model and reset final fully connected layer.
-#
-
 model_ft = models.resnet18(pretrained=True)
 num_ftrs = model_ft.fc.in_features
 # Here the size of each output sample is set to 2.
@@ -140,7 +141,6 @@ model_ft = train_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler,
                        num_epochs=10)
 # Save model
 torch.save(model_ft.state_dict(), 'models/model_ft.pth')
-
 
 
 
