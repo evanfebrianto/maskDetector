@@ -16,7 +16,10 @@ COLOR_NO_MASK = (0, 0, 255)
 COLOR_INVALID = (0, 0, 0)
 PADDING_SCALE = 0.1
 WIDTH, HEIGHT = 640, 360
+MEAN = [0.51156753, 0.45862445, 0.43074608]
+STD = [0.2624124, 0.2608746, 0.26630473]
 DEBUG = False
+SAVE_VIDEO = True
 
 # For webcam input:
 drawing_spec = mp_drawing.DrawingSpec(thickness=1, circle_radius=1)
@@ -27,7 +30,7 @@ cap.set(4, HEIGHT)
 transformer = transforms.Compose([
         transforms.Resize(size=(64,64)),
         transforms.ToTensor(),
-        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        transforms.Normalize(MEAN, STD)
     ])
 
 class_names = ['incorrect_mask', 'mask', 'no_mask']
@@ -41,10 +44,13 @@ model.load_state_dict(torch.load('models/model_ft.pth'))
 model = model.to(device)
 model.eval()
 
+if SAVE_VIDEO:
+    out = cv2.VideoWriter('output.mp4',cv2.VideoWriter_fourcc('M','J','P','G'), 30, (WIDTH,HEIGHT))
+
 with mp_face_mesh.FaceMesh(
     max_num_faces=5,
-    min_detection_confidence=0.3,
-    min_tracking_confidence=0.2) as face_mesh:
+    min_detection_confidence=0.1,
+    min_tracking_confidence=0.5) as face_mesh:
     while cap.isOpened():
         success, image = cap.read()
         if not success:
@@ -129,8 +135,16 @@ with mp_face_mesh.FaceMesh(
                 else:
                     cv2.putText(image, label, (cx_min, (cy_min-10)), cv2.FONT_HERSHEY_SIMPLEX, 
                     fontScale=0.5, color=selected_color, thickness=2)
+                
+                if SAVE_VIDEO:
+                    # Write the frame into the file 'output.mp4'
+                    out.write(image)
+
         cv2.imshow('Frame', image)
         if cv2.waitKey(5) & 0xFF == 27:
             break
+
 cap.release()
+if SAVE_VIDEO:
+    out.release()
 cv2.destroyAllWindows() 

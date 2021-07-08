@@ -13,6 +13,15 @@ import os
 import copy
 
 ######################################################################
+# Defining Constant
+# ------------------
+DATA_DIR = 'dataset'
+EPOCH = 5
+BATCH_SIZE = 128
+MEAN = [0.51156753, 0.45862445, 0.43074608]
+STD = [0.2624124, 0.2608746, 0.26630473]
+
+######################################################################
 # Data Preprocessing
 # ------------------
 # Data augmentation and normalization for training
@@ -22,20 +31,19 @@ data_transforms = {
         transforms.Resize(64),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
-        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        transforms.Normalize(MEAN, STD)
     ]),
     'val': transforms.Compose([
         transforms.Resize(64),
         transforms.ToTensor(),
-        transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+        transforms.Normalize(MEAN, STD)
     ]),
 }
 
-data_dir = 'resized-sampled-dataset'
-image_datasets = {x: datasets.ImageFolder(os.path.join(data_dir, x),
+image_datasets = {x: datasets.ImageFolder(os.path.join(DATA_DIR, x),
                                           data_transforms[x])
                   for x in ['train', 'val']}
-dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=32,
+dataloaders = {x: torch.utils.data.DataLoader(image_datasets[x], batch_size=BATCH_SIZE,
                                              shuffle=True, num_workers=10)
               for x in ['train', 'val']}
 dataset_sizes = {x: len(image_datasets[x]) for x in ['train', 'val']}
@@ -138,7 +146,7 @@ exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=7, gamma=0.1)
 
 # Train and evaluate
 model_ft = train_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler,
-                       num_epochs=10)
+                       num_epochs=EPOCH)
 # Save model
 torch.save(model_ft.state_dict(), 'models/model_ft.pth')
 
@@ -173,7 +181,7 @@ exp_lr_scheduler = lr_scheduler.StepLR(optimizer_conv, step_size=7, gamma=0.1)
 
 # Train and evaluate
 model_conv = train_model(model_conv, criterion, optimizer_conv,
-                         exp_lr_scheduler, num_epochs=10)
+                         exp_lr_scheduler, num_epochs=EPOCH)
 
 # Save model
 torch.save(model_conv.state_dict(), 'models/model_conv.pth')
