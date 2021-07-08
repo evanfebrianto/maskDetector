@@ -1,4 +1,3 @@
 .vscode
-resized-sampled-dataset*
-hymenoptera_data
-dataset
+resized-sampled-dataset
+webcam_dataset
