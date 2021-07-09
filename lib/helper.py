@@ -74,7 +74,7 @@ def _normalized_to_pixel_coordinates(
   return x_px, y_px
 
 
-def parse_config(filename='../configs.ini'):
+def parse_config(filename='../config.ini'):
   config = configparser.ConfigParser()
   config.read(filename)
 

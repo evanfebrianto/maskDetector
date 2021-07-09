@@ -11,15 +11,18 @@ import matplotlib.pyplot as plt
 import time
 import os
 import copy
+from lib import helper
 
 ######################################################################
 # Defining Constant
 # ------------------
 DATA_DIR = 'dataset'
-EPOCH = 5
-BATCH_SIZE = 128
-MEAN = [0.51156753, 0.45862445, 0.43074608]
-STD = [0.2624124, 0.2608746, 0.26630473]
+EPOCH = 25
+BATCH_SIZE = 256
+
+parser = helper.parse_config('config.ini')
+MEAN = parser['LIST']['MEAN']
+STD = parser['LIST']['STD']
 
 ######################################################################
 # Data Preprocessing
