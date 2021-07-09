@@ -7,48 +7,44 @@ import cv2
 from PIL import Image
 import mediapipe as mp
 from lib import helper
-import configparser
-import json, re
 
-config = configparser.ConfigParser()
-config.sections()
-config.read('config.ini')
+parser = helper.parse_config('config.ini')
 
-COLOR_MASK = tuple(int(v) for v in re.findall("[0-9]+", config['COLOR']['GREEN']))
-COLOR_INCORRECT = tuple(int(v) for v in re.findall("[0-9]+", config['COLOR']['YELLOW']))
-COLOR_NO_MASK = tuple(int(v) for v in re.findall("[0-9]+", config['COLOR']['RED']))
-COLOR_INVALID = tuple(int(v) for v in re.findall("[0-9]+", config['COLOR']['BLACK']))
+SHORT_RANGE = parser['BOOLEAN']['SHORT_RANGE']
+DEBUG = parser['BOOLEAN']['DEBUG']
+SAVE_VIDEO = parser['BOOLEAN']['SAVE_VIDEO']
 
-PADDING_SCALE = float(config['CAMERA']['PADDING'])
-WIDTH = int(config['CAMERA']['WIDTH'])
-HEIGHT = int(config['CAMERA']['HEIGHT'])
+WIDTH = parser['INT']['WIDTH']
+HEIGHT = parser['INT']['HEIGHT']
 
-MEAN = json.loads(config['MODEL']['MEAN'])
-STD = json.loads(config['MODEL']['STD'])
-DETECTION_CONFIDENCE = float(config['MODEL']['DETECTION_CONFIDENCE'])
-SHORT_RANGE = bool(int(config['MODEL']['SHORT_RANGE']))
+PADDING_SCALE = parser['FLOAT']['PADDING']
+DETECTION_CONFIDENCE = parser['FLOAT']['DETECTION_CONFIDENCE']
 
-DEBUG = bool(int(config['VIDEO']['DEBUG']))
-SAVE_VIDEO = bool(int(config['VIDEO']['SAVE_VIDEO']))
+MEAN = parser['LIST']['MEAN']
+STD = parser['LIST']['STD']
 
-print('{}'.format('*'*50))
+COLOR_MASK = parser['TUPLE']['GREEN']
+COLOR_INCORRECT = parser['TUPLE']['YELLOW']
+COLOR_NO_MASK = parser['TUPLE']['RED']
+COLOR_INVALID = parser['TUPLE']['BLACK']
+
+
+print('\n{} {} {}'.format('*'*16, 'LOADED PARAMETER','*'*16))
+print('SHORT_RANGE: {}'.format(SHORT_RANGE))
+print('DEBUG: {}'.format(DEBUG))
+print('SAVE_VIDEO: {}\n'.format(SAVE_VIDEO))
+print('WIDTH: {}'.format(WIDTH))
+print('HEIGHT: {}\n'.format(HEIGHT))
+print('PADDING_SCALE: {}'.format(PADDING_SCALE))
+print('DETECTION_CONFIDENCE: {}\n'.format(DETECTION_CONFIDENCE))
+print('MEAN: {}'.format(MEAN))
+print('STD: {}\n'.format(STD))
 print('COLOR_MASK: {}'.format(COLOR_MASK))
 print('COLOR_INCORRECT: {}'.format(COLOR_INCORRECT))
 print('COLOR_NO_MASK: {}'.format(COLOR_NO_MASK))
-print('COLOR_INVALID: {}\n'.format(COLOR_INVALID))
-print('PADDING_SCALE: {}'.format(PADDING_SCALE))
-print('WIDTH: {}'.format(WIDTH))
-print('HEIGHT: {}\n'.format(HEIGHT))
-print('MEAN: {}'.format(MEAN))
-print('STD: {}'.format(STD))
-print('DETECTION_CONFIDENCE: {}'.format(DETECTION_CONFIDENCE))
-print('SHORT_RANGE: {}\n'.format(SHORT_RANGE))
-print('DEBUG: {}'.format(DEBUG))
-print('SAVE_VIDEO: {}\n'.format(SAVE_VIDEO))
+print('COLOR_INVALID: {}'.format(COLOR_INVALID))
 print('{}\n'.format('*'*50))
 
-# parsed = helper.parse_config('config_type.ini')
-# print(parsed)
 
 # For webcam input:
 cap = cv2.VideoCapture(2)

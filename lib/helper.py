@@ -74,7 +74,7 @@ def _normalized_to_pixel_coordinates(
   return x_px, y_px
 
 
-def parse_config(filename='../config_type.ini'):
+def parse_config(filename='../configs.ini'):
   config = configparser.ConfigParser()
   config.read(filename)
 
@@ -82,6 +82,7 @@ def parse_config(filename='../config_type.ini'):
   for section_name in config.sections():
     parsed[section_name] = {}
     for option in config.options(section_name):
+      option = option.upper()
       if section_name == 'TUPLE':
         parsed[section_name][option] = tuple(int(v) for v in re.findall("[0-9]+", config[section_name][option]))
       elif section_name == 'LIST':
