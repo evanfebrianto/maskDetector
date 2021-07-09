@@ -4,8 +4,6 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.optim import lr_scheduler
-import numpy as np
-import torchvision
 from torchvision import datasets, models, transforms
 import matplotlib.pyplot as plt
 import time
@@ -154,6 +152,8 @@ model_ft = train_model(model_ft, criterion, optimizer_ft, exp_lr_scheduler,
 torch.save(model_ft.state_dict(), 'models/model_ft.pth')
 
 
+'''
+Not really necessary to run this block due to its poor performance
 
 ######################################################################
 # ConvNet as fixed feature extractor
@@ -188,3 +188,4 @@ model_conv = train_model(model_conv, criterion, optimizer_conv,
 
 # Save model
 torch.save(model_conv.state_dict(), 'models/model_conv.pth')
+'''
