@@ -7,23 +7,48 @@ import cv2
 from PIL import Image
 import mediapipe as mp
 from lib import helper
+import configparser
+import json, re
 
-mp_face_detection = mp.solutions.face_detection
+config = configparser.ConfigParser()
+config.sections()
+config.read('config.ini')
 
+COLOR_MASK = tuple(int(v) for v in re.findall("[0-9]+", config['COLOR']['GREEN']))
+COLOR_INCORRECT = tuple(int(v) for v in re.findall("[0-9]+", config['COLOR']['YELLOW']))
+COLOR_NO_MASK = tuple(int(v) for v in re.findall("[0-9]+", config['COLOR']['RED']))
+COLOR_INVALID = tuple(int(v) for v in re.findall("[0-9]+", config['COLOR']['BLACK']))
 
-COLOR_MASK = (0, 255, 0)
-COLOR_INCORRECT = (0, 240, 255)
-COLOR_NO_MASK = (0, 0, 255)
-COLOR_INVALID = (0, 0, 0)
-PADDING_SCALE = 0.1
-WIDTH, HEIGHT = 640, 360
-MEAN = [0.51156753, 0.45862445, 0.43074608]
-STD = [0.2624124, 0.2608746, 0.26630473]
-DETECTION_CONFIDENCE = 0.5
+PADDING_SCALE = float(config['CAMERA']['PADDING'])
+WIDTH = int(config['CAMERA']['WIDTH'])
+HEIGHT = int(config['CAMERA']['HEIGHT'])
 
-SHORT_RANGE = False # if objects are within 2m
-DEBUG = False
-SAVE_VIDEO = False
+MEAN = json.loads(config['MODEL']['MEAN'])
+STD = json.loads(config['MODEL']['STD'])
+DETECTION_CONFIDENCE = float(config['MODEL']['DETECTION_CONFIDENCE'])
+SHORT_RANGE = bool(int(config['MODEL']['SHORT_RANGE']))
+
+DEBUG = bool(int(config['VIDEO']['DEBUG']))
+SAVE_VIDEO = bool(int(config['VIDEO']['SAVE_VIDEO']))
+
+print('{}'.format('*'*50))
+print('COLOR_MASK: {}'.format(COLOR_MASK))
+print('COLOR_INCORRECT: {}'.format(COLOR_INCORRECT))
+print('COLOR_NO_MASK: {}'.format(COLOR_NO_MASK))
+print('COLOR_INVALID: {}\n'.format(COLOR_INVALID))
+print('PADDING_SCALE: {}'.format(PADDING_SCALE))
+print('WIDTH: {}'.format(WIDTH))
+print('HEIGHT: {}\n'.format(HEIGHT))
+print('MEAN: {}'.format(MEAN))
+print('STD: {}'.format(STD))
+print('DETECTION_CONFIDENCE: {}'.format(DETECTION_CONFIDENCE))
+print('SHORT_RANGE: {}\n'.format(SHORT_RANGE))
+print('DEBUG: {}'.format(DEBUG))
+print('SAVE_VIDEO: {}\n'.format(SAVE_VIDEO))
+print('{}\n'.format('*'*50))
+
+# parsed = helper.parse_config('config_type.ini')
+# print(parsed)
 
 # For webcam input:
 cap = cv2.VideoCapture(2)
@@ -46,6 +71,8 @@ model.fc = nn.Linear(num_ftrs, len(class_names))  # make the change
 model.load_state_dict(torch.load('models/model_ft.pth'))
 model = model.to(device)
 model.eval()
+
+mp_face_detection = mp.solutions.face_detection
 
 if SAVE_VIDEO:
     out = cv2.VideoWriter('output.mp4',cv2.VideoWriter_fourcc('M','J','P','G'), 30, (WIDTH,HEIGHT))

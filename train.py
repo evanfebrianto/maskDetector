@@ -28,13 +28,13 @@ STD = [0.2624124, 0.2608746, 0.26630473]
 # Just normalization for validation
 data_transforms = {
     'train': transforms.Compose([
-        transforms.Resize(64),
+        transforms.Resize(size=(64,64)),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
         transforms.Normalize(MEAN, STD)
     ]),
     'val': transforms.Compose([
-        transforms.Resize(64),
+        transforms.Resize(size=(64,64)),
         transforms.ToTensor(),
         transforms.Normalize(MEAN, STD)
     ]),
