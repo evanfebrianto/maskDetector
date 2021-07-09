@@ -16,6 +16,7 @@ SAVE_VIDEO = parser['BOOLEAN']['SAVE_VIDEO']
 
 WIDTH = parser['INT']['WIDTH']
 HEIGHT = parser['INT']['HEIGHT']
+CAM_ID = parser['INT']['CAMERA_ID']
 
 PADDING_SCALE = parser['FLOAT']['PADDING']
 DETECTION_CONFIDENCE = parser['FLOAT']['DETECTION_CONFIDENCE']
@@ -34,7 +35,8 @@ print('SHORT_RANGE: {}'.format(SHORT_RANGE))
 print('DEBUG: {}'.format(DEBUG))
 print('SAVE_VIDEO: {}\n'.format(SAVE_VIDEO))
 print('WIDTH: {}'.format(WIDTH))
-print('HEIGHT: {}\n'.format(HEIGHT))
+print('HEIGHT: {}'.format(HEIGHT))
+print('CAM_ID: {}\n'.format(CAM_ID))
 print('PADDING_SCALE: {}'.format(PADDING_SCALE))
 print('DETECTION_CONFIDENCE: {}\n'.format(DETECTION_CONFIDENCE))
 print('MEAN: {}'.format(MEAN))
@@ -47,7 +49,7 @@ print('{}\n'.format('*'*50))
 
 
 # For webcam input:
-cap = cv2.VideoCapture(2)
+cap = cv2.VideoCapture(CAM_ID)
 cap.set(3, WIDTH)
 cap.set(4, HEIGHT)
 
@@ -146,7 +148,7 @@ with mp_face_detection.FaceDetection(
                     out.write(image)
 
         cv2.imshow('Frame', image)
-        if cv2.waitKey(5) & 0xFF == 27:
+        if cv2.waitKey(5) == ord('q'):
             break
 
 cap.release()

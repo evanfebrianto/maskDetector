@@ -79,11 +79,11 @@ with mp_face_detection.FaceDetection(
                         except: # ignore empty frame
                             continue
                         print('Saved: {}'.format(image_path))
-                        save_img = False
+            save_img = False
 
         cv2.putText(image, class_names[state], (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 
                     fontScale=0.8, color=selected_color, thickness=2)
-        cv2.putText(image, 'Press Esc to close the program', (10, HEIGHT-10), cv2.FONT_HERSHEY_SIMPLEX, 
+        cv2.putText(image, 'Press Q to close the program', (10, HEIGHT-10), cv2.FONT_HERSHEY_SIMPLEX, 
                     fontScale=0.8, color=selected_color, thickness=2)
         cv2.imshow('Frame', image)
         k = cv2.waitKey(33)
