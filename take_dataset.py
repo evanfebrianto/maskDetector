@@ -7,6 +7,7 @@ from lib import helper
 parser = helper.parse_config('config.ini')
 
 PADDING_SCALE = parser['FLOAT']['PADDING']
+CAM_ID = parser['INT']['CAMERA_ID']
 WIDTH = parser['INT']['WIDTH']
 HEIGHT = parser['INT']['HEIGHT']
 SHORT_RANGE = parser['BOOLEAN']['SHORT_RANGE']
@@ -20,7 +21,7 @@ class_names = ['incorrect_mask', 'mask', 'no_mask']
 
 
 # For webcam input:
-cap = cv2.VideoCapture(2)
+cap = cv2.VideoCapture(CAM_ID)
 cap.set(3, WIDTH)
 cap.set(4, HEIGHT)
 
@@ -80,8 +81,9 @@ with mp_face_detection.FaceDetection(
                         print('Saved: {}'.format(image_path))
                         save_img = False
 
-        # print(class_names[state])
         cv2.putText(image, class_names[state], (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 
+                    fontScale=0.8, color=selected_color, thickness=2)
+        cv2.putText(image, 'Press Esc to close the program', (10, HEIGHT-10), cv2.FONT_HERSHEY_SIMPLEX, 
                     fontScale=0.8, color=selected_color, thickness=2)
         cv2.imshow('Frame', image)
         k = cv2.waitKey(33)
