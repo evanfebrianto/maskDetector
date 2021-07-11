@@ -1,4 +1,5 @@
 from __future__ import print_function, division
+from numpy import average
 
 import torch
 import torch.nn as nn
@@ -7,6 +8,8 @@ import cv2
 from PIL import Image
 import mediapipe as mp
 from lib import helper
+import time
+import numpy as np
 
 parser = helper.parse_config('config.ini')
 
@@ -75,6 +78,7 @@ mp_face_detection = mp.solutions.face_detection
 if SAVE_VIDEO:
     out = cv2.VideoWriter('output.mp4',cv2.VideoWriter_fourcc('M','J','P','G'), 30, (WIDTH,HEIGHT))
 
+FPS_data = []
 with mp_face_detection.FaceDetection(
     model_selection=0 if SHORT_RANGE else 1, 
     min_detection_confidence=DETECTION_CONFIDENCE) as face_detection:
@@ -84,6 +88,9 @@ with mp_face_detection.FaceDetection(
             print("Ignoring empty camera frame.")
             # If loading a video, use 'break' instead of 'continue'.
             continue
+        
+        # Start timer
+        start_time = time.time()
 
         # Flip the image horizontally for a later selfie-view display, and convert
         # the BGR image to RGB.
@@ -136,22 +143,35 @@ with mp_face_detection.FaceDetection(
                     cv2.rectangle(image, (cx_min, cy_min), (cx_max, cy_max), selected_color, 2)
 
                     if DEBUG:
-                        dimension = 'dx: {} | dy: {}'.format(dx,dy)
-                        cv2.putText(image, dimension, (cx_min, (cy_min-10)), cv2.FONT_HERSHEY_SIMPLEX, 
-                        fontScale=0.5, color=selected_color, thickness=2)
-                    else:
-                        cv2.putText(image, label, (cx_min, (cy_min-10)), cv2.FONT_HERSHEY_SIMPLEX, 
-                        fontScale=0.5, color=selected_color, thickness=2)
-                
-                if SAVE_VIDEO:
-                    # Write the frame into the file 'output.mp4'
-                    out.write(image)
+                        label = 'dx: {} | dy: {}'.format(dx,dy)
+
+                    cv2.putText(image, label, (cx_min, (cy_min-10)), cv2.FONT_HERSHEY_SIMPLEX, 
+                    fontScale=0.5, color=selected_color, thickness=2)
+
+        # End of process and visualization
+        end_time = time.time() - start_time
+
+        # Put FPS in frame, optional
+        FPS_data.append(1/end_time)
+        if len(FPS_data) > 10:
+            # remove old data
+            FPS_data.pop(0)
+        FPS_label = np.average(FPS_data)
+        cv2.putText(image, 'FPS: {:.2f}'.format(FPS_label), (13, (23)), cv2.FONT_HERSHEY_SIMPLEX, 
+        fontScale=0.7, color=COLOR_INVALID, thickness=2)
+        cv2.putText(image, 'FPS: {:.2f}'.format(FPS_label), (10, (20)), cv2.FONT_HERSHEY_SIMPLEX, 
+        fontScale=0.7, color=(0,100,255), thickness=2)
+
+        if SAVE_VIDEO:
+            # Write the frame into the file 'output.mp4'
+            out.write(image)
 
         cv2.imshow('Frame', image)
         if cv2.waitKey(5) == ord('q'):
             break
 
 cap.release()
+cv2.destroyAllWindows()
+
 if SAVE_VIDEO:
     out.release()
-cv2.destroyAllWindows() 
