@@ -1,18 +1,21 @@
 import smtplib
 import imghdr
 from email.message import EmailMessage
+from helper import parse_config
 
-Sender_Email = "nomaskdetected@gmail.com"
-Reciever_Email = "van.evanfebrianto@gmail.com"
-Password = 'nomask2021'
+parser = parse_config('config.ini')
+
+Sender_Email = parser['STRING']['SENDER_EMAIL']
+Receiver_Emails = parser['STRING']['RECEIVER_EMAILS']
+Password = parser['STRING']['PASSWORD']
 
 newMessage = EmailMessage()                         
 newMessage['Subject'] = "Check out the tesla" 
 newMessage['From'] = Sender_Email                   
-newMessage['To'] = Reciever_Email                   
+newMessage['To'] = Receiver_Emails                   
 newMessage.set_content('Let me know what you think. Image attached!') 
 
-with open('tesla.jpg', 'rb') as f:
+with open('lib/tesla.jpg', 'rb') as f:
     image_data = f.read()
     image_type = imghdr.what(f.name)
     image_name = f.name

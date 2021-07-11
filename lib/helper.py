@@ -93,4 +93,13 @@ def parse_config(filename='../config.ini'):
         parsed[section_name][option] = int(config[section_name][option])
       elif section_name == 'BOOLEAN':
         parsed[section_name][option] = bool(int(config[section_name][option]))
+      elif section_name == 'STRING':
+        if option != 'RECEIVER_EMAILS':
+          parsed[section_name][option] = config[section_name][option]
+        else:
+          emails_raw = config[section_name][option].split(',')
+          emails_list = []
+          for email in emails_raw:
+            emails_list.append(email.strip())
+          parsed[section_name][option] = emails_list
   return parsed
