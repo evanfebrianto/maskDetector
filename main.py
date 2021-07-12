@@ -1,5 +1,4 @@
 from __future__ import print_function, division
-from numpy import average
 
 import torch
 import torch.nn as nn
@@ -8,8 +7,11 @@ import cv2
 from PIL import Image
 import mediapipe as mp
 from lib import helper
-import time
+import time, datetime
 import numpy as np
+from threading import Thread
+import lib.emailClass
+import os
 
 parser = helper.parse_config('config.ini')
 
@@ -20,6 +22,10 @@ SAVE_VIDEO = parser['BOOLEAN']['SAVE_VIDEO']
 WIDTH = parser['INT']['WIDTH']
 HEIGHT = parser['INT']['HEIGHT']
 CAM_ID = parser['INT']['CAMERA_ID']
+EMAIL_INTERVAL = parser['INT']['INTERVAL_SECOND']
+DETECTION_BUFFER = parser['INT']['DETECTION_BUFFER']
+
+LOG_DIR = parser['STRING']['LOG_DIR']
 
 PADDING_SCALE = parser['FLOAT']['PADDING']
 DETECTION_CONFIDENCE = parser['FLOAT']['DETECTION_CONFIDENCE']
@@ -39,7 +45,10 @@ print('DEBUG: {}'.format(DEBUG))
 print('SAVE_VIDEO: {}\n'.format(SAVE_VIDEO))
 print('WIDTH: {}'.format(WIDTH))
 print('HEIGHT: {}'.format(HEIGHT))
-print('CAM_ID: {}\n'.format(CAM_ID))
+print('CAM_ID: {}'.format(CAM_ID))
+print('EMAIL_INTERVAL: {}'.format(EMAIL_INTERVAL))
+print('DETECTION_BUFFER: {}\n'.format(DETECTION_BUFFER))
+print('LOG_DIR: {}\n'.format(LOG_DIR))
 print('PADDING_SCALE: {}'.format(PADDING_SCALE))
 print('DETECTION_CONFIDENCE: {}\n'.format(DETECTION_CONFIDENCE))
 print('MEAN: {}'.format(MEAN))
@@ -49,6 +58,16 @@ print('COLOR_INCORRECT: {}'.format(COLOR_INCORRECT))
 print('COLOR_NO_MASK: {}'.format(COLOR_NO_MASK))
 print('COLOR_INVALID: {}'.format(COLOR_INVALID))
 print('{}\n'.format('*'*50))
+
+
+def sendingEmail():
+    global isSendingEmail, email
+    if isSendingEmail:
+        time_now = datetime.datetime.today().strftime("%d-%m-%Y %H:%M:%S")
+        email.setProperties(subject='No Mask Report at {}'.format(time_now),
+            body_message='Hi, please kindly check the attached file for your reference.')
+        email.sendEmail()
+        isSendingEmail = False
 
 
 # For webcam input:
@@ -78,7 +97,21 @@ mp_face_detection = mp.solutions.face_detection
 if SAVE_VIDEO:
     out = cv2.VideoWriter('output.mp4',cv2.VideoWriter_fourcc('M','J','P','G'), 30, (WIDTH,HEIGHT))
 
+# initialize some variables
 FPS_data = []
+counter_noMask, counter_incorrect = 0, 0
+email_time = time.time()
+current_dir = str(datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S"))
+
+email = lib.emailClass.EmailModule(configFile='config.ini')
+isSendingEmail = False
+
+# we need to run the recorder in a seperate thread, otherwise blocking options
+# would prevent program from running detection
+email_thread = Thread(target=sendingEmail)
+email_thread.start()
+print('Email thread started!')
+
 with mp_face_detection.FaceDetection(
     model_selection=0 if SHORT_RANGE else 1, 
     min_detection_confidence=DETECTION_CONFIDENCE) as face_detection:
@@ -91,6 +124,9 @@ with mp_face_detection.FaceDetection(
         
         # Start timer
         start_time = time.time()
+        
+        # Initialize bool value to determine label image
+        isNoMask, isIncorrect = False, False
 
         # Flip the image horizontally for a later selfie-view display, and convert
         # the BGR image to RGB.
@@ -131,11 +167,13 @@ with mp_face_detection.FaceDetection(
                     except ValueError:
                         continue
                     
-                    # Visualize
+                    # Visualize and count buffer
                     if label == 'no_mask':
                         selected_color = COLOR_NO_MASK
+                        isNoMask = True
                     elif label == 'incorrect_mask':
                         selected_color = COLOR_INCORRECT
+                        isIncorrect = True
                     elif label == 'mask':
                         selected_color = COLOR_MASK
                     else:
@@ -151,25 +189,62 @@ with mp_face_detection.FaceDetection(
         # End of process and visualization
         end_time = time.time() - start_time
 
+        # Count detected frame
+        if isNoMask:
+            counter_noMask += 1
+        if isIncorrect:
+            counter_incorrect += 1
+
         # Put FPS in frame, optional
-        FPS_data.append(1/end_time)
-        if len(FPS_data) > 10:
-            # remove old data
-            FPS_data.pop(0)
-        FPS_label = np.average(FPS_data)
-        cv2.putText(image, 'FPS: {:.2f}'.format(FPS_label), (13, (23)), cv2.FONT_HERSHEY_SIMPLEX, 
-        fontScale=0.7, color=COLOR_INVALID, thickness=2)
-        cv2.putText(image, 'FPS: {:.2f}'.format(FPS_label), (10, (20)), cv2.FONT_HERSHEY_SIMPLEX, 
-        fontScale=0.7, color=(0,100,255), thickness=2)
+        if DEBUG:
+            FPS_data.append(1/end_time)
+            if len(FPS_data) > 10:
+                # remove old data
+                FPS_data.pop(0)
+            FPS_label = np.average(FPS_data)
+            cv2.putText(image, 'FPS: {:.2f}'.format(FPS_label), (13, (23)), cv2.FONT_HERSHEY_SIMPLEX, 
+            fontScale=0.7, color=COLOR_INVALID, thickness=2)
+            cv2.putText(image, 'FPS: {:.2f}'.format(FPS_label), (10, (20)), cv2.FONT_HERSHEY_SIMPLEX, 
+            fontScale=0.7, color=(0,100,255), thickness=2)
 
         if SAVE_VIDEO:
             # Write the frame into the file 'output.mp4'
             out.write(image)
 
+        # save no mask and incorrect mask detection into logs
+        if time.time() - email_time < EMAIL_INTERVAL:
+            # save image if more than buffer
+            if counter_noMask > DETECTION_BUFFER or counter_incorrect > DETECTION_BUFFER:
+                if isNoMask and isIncorrect:
+                    label_image = 'combined_'
+                elif isNoMask:
+                    label_image = 'noMask_'
+                elif isIncorrect:
+                    label_image = 'incorrectMask_'
+                full_dir = os.path.join(LOG_DIR,current_dir)
+                if not os.path.exists(full_dir):
+                    os.makedirs(full_dir)
+                cv2.imwrite(os.path.join(full_dir,label_image+str(int(time.time()))+'.jpg'),image)
+                # flush counter after writing image
+                counter_noMask, counter_incorrect = 0, 0
+        else:
+            # change the folder name
+            current_dir = str(datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S"))
+            # reset email_time
+            email_time = time.time()
+            # Send trigger to send email
+            # email_thread = None
+            # email_thread = Thread(target=sendingEmail)
+            isSendingEmail = True
+            # email_thread.start()
+            if DEBUG:
+                print('Create new dir in logs . . .')
+        # print('isSendingEmail: {}\tisAlive: {}'.format(isSendingEmail, email_thread.isAlive()))
         cv2.imshow('Frame', image)
         if cv2.waitKey(5) == ord('q'):
             break
 
+email_thread.join()
 cap.release()
 cv2.destroyAllWindows()
 

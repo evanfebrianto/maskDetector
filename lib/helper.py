@@ -1,9 +1,8 @@
 
 import math
-from typing import List, Optional, Tuple, Union
+from typing import List, Tuple, Union
+import os, zipfile
 
-import cv2
-import dataclasses
 import numpy as np
 
 from mediapipe.framework.formats import detection_pb2
@@ -103,3 +102,22 @@ def parse_config(filename='../config.ini'):
             emails_list.append(email.strip())
           parsed[section_name][option] = emails_list
   return parsed
+
+
+def zip_dir(dir_path, outFullName):
+    """
+    Compress the specified folder
+    :param dir_path: target folder path
+    :param outFullName: Compressed file save path+XXXX.zip
+    :return:
+    """
+    testcase_zip = zipfile.ZipFile(outFullName, 'w', zipfile.ZIP_DEFLATED)
+    for path, dir_names, file_names in os.walk(dir_path):
+        for filename in file_names:
+            testcase_zip.write(os.path.join(path, filename))
+    testcase_zip.close()
+    print("Packed successfully")
+
+def get_latest_folder(dir_path):
+    dirs = sorted([x for x in os.listdir(dir_path) if x != 'to_send.zip'])
+    return dirs[-1]
