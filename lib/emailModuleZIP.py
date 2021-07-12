@@ -32,7 +32,7 @@ Password = parser['STRING']['PASSWORD']
 filepath = "lib/tesla.zip"
 attachment_name = "Test report.zip"
 
-time = datetime.datetime.today().strftime("%d-%m-%Y %H:%M:%s")
+time = datetime.datetime.today().strftime("%d-%m-%Y %H:%M:%S")
 msg = MIMEMultipart()
 # Message body
 msg.attach(MIMEText("See the attachment for the test report of {}".format(time),'plain','utf-8'))
