@@ -120,4 +120,7 @@ def zip_dir(dir_path, outFullName):
 
 def get_latest_folder(dir_path):
     dirs = sorted([x for x in os.listdir(dir_path) if x != 'to_send.zip'])
-    return dirs[-1]
+    if len(dirs) > 0:
+        return dirs[-1]
+    else:
+        return None

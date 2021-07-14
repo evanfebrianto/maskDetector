@@ -1,6 +1,6 @@
 import datetime
 import mimetypes
-import os, smtplib
+import os, smtplib, shutil
 from email import encoders
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
@@ -16,7 +16,13 @@ class EmailModule():
         self.password = parser['STRING']['PASSWORD']
         self.log_dir = parser['STRING']['LOG_DIR']
         self.msg = MIMEMultipart()
-        self.last_folder_sent = None
+        
+        self.archive_folder = os.path.join(self.log_dir,'Archive')
+        self.active_folder = os.path.join(self.log_dir,'Running')
+        if not os.path.exists(self.archive_folder):
+            os.makedirs(self.archive_folder)
+        if not os.path.exists(self.active_folder):
+            os.makedirs(self.active_folder)
     
     def setProperties(self, subject, body_message='') -> None:
         # Remove existing zip file
@@ -57,18 +63,25 @@ class EmailModule():
         file_msg.add_header('Content-Disposition', 'attachment', filename=attachment_name)  # Modify email header
         self.msg.attach(file_msg)
 
+    def moveToArchive(self, dir_path):
+        try:
+            shutil.move(dir_path,self.archive_folder)
+        except:
+            shutil.rmtree(dir_path)
 
-    def sendEmail(self) -> None:
-        latest_folder = get_latest_folder(dir_path=self.log_dir)
-        print('last_sent: {}\nlatest_folder: {}'.format(self.last_folder_sent, latest_folder))
-        if self.last_folder_sent != latest_folder:
+    def sendEmail(self):
+        latest_folder = get_latest_folder(dir_path=self.active_folder)
+        # print('last_sent: {}\nlatest_folder: {}'.format(last_folder_sent, latest_folder))
+        if latest_folder:
             try:
                 server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
                 server.login(self.sender,self.password)
                 server.sendmail(self.sender,self.receivers,self.msg.as_string())
                 server.quit()
-                self.last_folder_sent = latest_folder
-                print("Email sent successfully")
+                self.moveToArchive(os.path.join(self.active_folder,latest_folder))
+                print("Email sent successfully\n")
             except Exception as err:
-                print("Failed to send emails")
+                print("Failed to send emails\n")
                 print(err)
+        else:
+            print('No anomaly detected during this time frame\n')
