@@ -1,5 +1,6 @@
 .vscode
 dataset
+face-mask-dataset.zip
 resized-sampled-dataset
 webcam_dataset
 logs
