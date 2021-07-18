@@ -106,3 +106,6 @@ You can modify those value and it will automatically be apllied to all the codes
 After configuring the config.ini, you can now enjoy the program by executing
 ```python main.py```
 
+# Detection Result
+You can expect to have something like this for in your machine.
+![result](media/mask.gif)
