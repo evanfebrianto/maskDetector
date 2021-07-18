@@ -8,7 +8,7 @@ This program is to detect faces and classify whether people are wearing mask pro
 * Create an environment using anaconda by executing ```conda create -n maskDetector python=3.8```
 * Activate the new environment by ```conda activate maskDetector```
 * Navigate to your working directory (root folder)
-* Install the other libraries by running ```pip install requirements.txt```
+* Install the other libraries by running ```pip install -r requirements.txt```
 
 
 # Usage
