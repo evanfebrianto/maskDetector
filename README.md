@@ -52,6 +52,7 @@ Below is the example of [config.ini](config.ini)
 short_range = 0
 debug = 0
 save_video = 0
+sending_email = 1
 
 [INT]
 width = 640
@@ -87,6 +88,7 @@ You can modify those value and it will automatically be apllied to all the codes
 | short_range | If you are testing using a webcam, then use 1 because the object is within 2m to the camera, otherwise you can set to 0 |
 | debug | If you want to enter debug mode, you can set to 1 |
 | save_video | If you want to save the detection video, set to 1 |
+| sending_email | To decide whether you need the program to send report email |
 | width | Set camera width |
 | height | Set camera height |
 | camera_id | The camera id, 0 is for webcam, 1 or 2 is for external camera |
@@ -109,3 +111,6 @@ After configuring the config.ini, you can now enjoy the program by executing
 # Detection Result
 You can expect to have something like this for in your machine.
 ![result](media/mask.gif)
+
+## Note
+To show the people counter result, you need to turn off the debug mode.

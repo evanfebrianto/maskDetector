@@ -19,6 +19,7 @@ parser = helper.parse_config('config.ini')
 SHORT_RANGE = parser['BOOLEAN']['SHORT_RANGE']
 DEBUG = parser['BOOLEAN']['DEBUG']
 SAVE_VIDEO = parser['BOOLEAN']['SAVE_VIDEO']
+SENDING_EMAIL = parser['BOOLEAN']['SENDING_EMAIL']
 
 WIDTH = parser['INT']['WIDTH']
 HEIGHT = parser['INT']['HEIGHT']
@@ -43,7 +44,8 @@ COLOR_INVALID = parser['TUPLE']['BLACK']
 print('\n{} {} {}'.format('*'*16, 'LOADED PARAMETER','*'*16))
 print('SHORT_RANGE: {}'.format(SHORT_RANGE))
 print('DEBUG: {}'.format(DEBUG))
-print('SAVE_VIDEO: {}\n'.format(SAVE_VIDEO))
+print('SAVE_VIDEO: {}'.format(SAVE_VIDEO))
+print('SENDING_EMAIL: {}\n'.format(SENDING_EMAIL))
 print('WIDTH: {}'.format(WIDTH))
 print('HEIGHT: {}'.format(HEIGHT))
 print('CAM_ID: {}'.format(CAM_ID))
@@ -101,6 +103,7 @@ if __name__ == "__main__":
     # initialize some variables
     procs = []
     FPS_data = []
+    people_counter = 0
     counter_noMask, counter_incorrect = 0, 0
     email_time = time.time()
     current_dir = str(datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S"))
@@ -137,10 +140,15 @@ if __name__ == "__main__":
             # Draw the face detection annotations on the image.
             image.flags.writeable = True
             image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+
+            # Reset people_counter
+            people_counter = 0
+
             if results.detections:
                 for detection in results.detections:
                     cx_min, cy_min, cx_max, cy_max = helper.get_bb(image, detection)
                     if cx_min is not None:
+                        people_counter += 1
                         dx, dy = (cx_max-cx_min, cy_max-cy_min)
 
                         # Add padding to classify image
@@ -202,49 +210,57 @@ if __name__ == "__main__":
                 fontScale=0.7, color=COLOR_INVALID, thickness=2)
                 cv2.putText(image, 'FPS: {:.2f}'.format(FPS_label), (10, (20)), cv2.FONT_HERSHEY_SIMPLEX, 
                 fontScale=0.7, color=(0,100,255), thickness=2)
+            else:
+                cv2.putText(image, '# People: {}'.format(people_counter), (13, (23)), cv2.FONT_HERSHEY_SIMPLEX, 
+                fontScale=0.7, color=COLOR_INVALID, thickness=2)
+                cv2.putText(image, '# People: {}'.format(people_counter), (10, (20)), cv2.FONT_HERSHEY_SIMPLEX, 
+                fontScale=0.7, color=(0,100,255), thickness=2)
 
             if SAVE_VIDEO:
                 # Write the frame into the file 'output.mp4'
                 out.write(image)
 
-            # save no mask and incorrect mask detection into logs
-            if time.time() - email_time < EMAIL_INTERVAL:
-                # save image if more than buffer
-                if counter_noMask > DETECTION_BUFFER or counter_incorrect > DETECTION_BUFFER:
-                    if isNoMask and isIncorrect:
-                        label_image = 'combined_'
-                    elif isNoMask:
-                        label_image = 'noMask_'
-                    elif isIncorrect:
-                        label_image = 'incorrectMask_'
-                    full_dir = os.path.join(email.active_folder,current_dir)
-                    if not os.path.exists(full_dir):
-                        os.makedirs(full_dir)
-                    cv2.imwrite(os.path.join(full_dir,label_image+str(int(time.time()))+'.jpg'),image)
-                    # flush counter after writing image
-                    counter_noMask, counter_incorrect = 0, 0
-            else:
-                # change the folder name
-                current_dir = str(datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S"))
-                # reset email_time
-                email_time = time.time()
-                # Send trigger to send email
-                # we need to run the recorder in a seperate process, otherwise blocking options
-                # would prevent program from running detection
-                isSendingEmail = True
-                proc = Process(target=sendingEmail)
-                procs.append(proc)
-                proc.start()
-                if DEBUG:
-                    print('Create new dir in logs . . .')
+            # Proceed if need to send email
+            if SENDING_EMAIL:
+                # save no mask and incorrect mask detection into logs
+                if time.time() - email_time < EMAIL_INTERVAL:
+                    # save image if more than buffer
+                    if counter_noMask > DETECTION_BUFFER or counter_incorrect > DETECTION_BUFFER:
+                        if isNoMask and isIncorrect:
+                            label_image = 'combined_'
+                        elif isNoMask:
+                            label_image = 'noMask_'
+                        elif isIncorrect:
+                            label_image = 'incorrectMask_'
+                        full_dir = os.path.join(email.active_folder,current_dir)
+                        if not os.path.exists(full_dir):
+                            os.makedirs(full_dir)
+                        cv2.imwrite(os.path.join(full_dir,label_image+str(int(time.time()))+'.jpg'),image)
+                        # flush counter after writing image
+                        counter_noMask, counter_incorrect = 0, 0
+                else:
+                    # change the folder name
+                    current_dir = str(datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S"))
+                    # reset email_time
+                    email_time = time.time()
+                    # Send trigger to send email
+                    # we need to run the recorder in a seperate process, otherwise blocking options
+                    # would prevent program from running detection
+                    isSendingEmail = True
+                    proc = Process(target=sendingEmail)
+                    procs.append(proc)
+                    proc.start()
+                    if DEBUG:
+                        print('Create new dir in logs . . .')
             # print('isSendingEmail: {}\tisAlive: {}'.format(isSendingEmail, email_thread.isAlive()))
             cv2.imshow('Frame', image)
             if cv2.waitKey(5) == ord('q'):
                 break
     
-    # terminate all process
-    for proc in procs:
-        proc.join()
+    if SENDING_EMAIL:
+        # terminate all process
+        for proc in procs:
+            proc.join()
     cap.release()
     cv2.destroyAllWindows()
 
